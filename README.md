@@ -43,7 +43,7 @@ Once a request is through Tailscale, it lands at **Docker**, which runs three co
 
 <table>
   <colgroup>
-    <col style="width: 180px;">
+    <col style="width: 220px;">
     <col>
     <col>
   </colgroup>
