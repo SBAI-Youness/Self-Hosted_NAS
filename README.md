@@ -82,5 +82,139 @@ Once a request is through Tailscale, it lands at **Docker**, which runs three co
     <td>A mesh VPN built on WireGuard, with a built-in feature called Funnel that can selectively expose services to the public internet</td>
     <td>VPN tunnel for my own devices - encrypted, no open ports. Funnel for everyone else - lets friends open shared links in any browser, no Tailscale needed</td>
   </tr>
+</table>
 
 ---
+
+## Setup & Configuration
+
+### Step 1: Install Ubuntu Server
+
+Download [Ubuntu Server LTS](https://ubuntu.com/download/server) and flash it to a USB stick. Use whatever tool you prefer:
+
+- **[Balena Etcher](https://etcher.balena.io/)** - simple GUI, works on Windows, Mac, Linux
+- **[Rufus](https://rufus.ie/)** - Windows only, more control over boot mode
+- **Command line** (Linux/Mac) - fast, no extra tools needed:
+```bash
+sudo dd if=/path/to/ubuntu-server.iso of=/dev/sdX bs=4M status=progress && sync
+```
+> Replace `/dev/sdX` with your USB drive's device name - check with `lsblk` first.
+
+Boot the target machine from the USB. During install:
+- Enable **OpenSSH** - this lets you manage everything remotely from your main computer, no keyboard or monitor needed on the server
+- Use the entire internal disk for storage
+Once it reboots, find its local IP and SSH in from your main machine:
+```bash
+ssh username@192.168.X.X
+```
+> Both machines need to be on the same local network for this step - the `192.168.X.X` address is only reachable from inside your home network. Once Tailscale is set up in Step 4, you can SSH from anywhere using the Tailscale IP instead.
+
+Every command from here runs over SSH.
+
+Before anything else, update the system to make sure you're starting with the latest security patches:
+```bash
+sudo apt update && sudo apt upgrade -y
+```
+
+
+### Step 2: Install Docker
+
+Instead of installing Nextcloud, MariaDB, and Redis directly on the system - which means managing dependencies, config files, and potential conflicts - Docker packages each one into its own isolated container. One command brings everything up, one command tears it down. Clean, reproducible, easy to update.
+
+Install Docker and add your user to the Docker group so you don't need `sudo` every time:
+```bash
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+```
+
+Log out and back in for the group change to apply, then verify Docker is working:
+```bash
+docker run hello-world
+```
+If it prints a success message, you're good to move on.
+
+
+### Step 3: Deploy Nextcloud
+
+This step brings three services up together: **Nextcloud** is the app you interact with, **MariaDB** is the database that stores all file metadata, and **Redis** is the cache that keeps things fast. You only ever see Nextcloud - the other two run quietly behind it. Docker Compose defines all three in one file and starts them with a single command.
+
+Create a folder for the project and open the config file:
+```bash
+mkdir ~/nextcloud && cd ~/nextcloud
+nano docker-compose.yml
+```
+
+Paste in this configuration:
+ 
+```yaml
+version: '3.8'
+services:
+  db:
+    image: mariadb:10.11
+    container_name: nextcloud-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: change_this_root_password
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nextcloud
+      MYSQL_PASSWORD: change_this_db_password
+    volumes:
+      - db_data:/var/lib/mysql
+  redis:
+    image: redis:alpine
+    container_name: nextcloud-redis
+    restart: always
+  app:
+    image: nextcloud:latest
+    container_name: nextcloud-app
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+      - redis
+    environment:
+      MYSQL_HOST: db
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nextcloud
+      MYSQL_PASSWORD: change_this_db_password
+      REDIS_HOST: redis
+      NEXTCLOUD_TRUSTED_DOMAINS: "localhost 192.168.X.X"  # replace with your server IP
+    volumes:
+      - nextcloud_core:/var/www/html
+      - ~/nextcloud-data:/var/www/html/data  # your files go here
+volumes:
+  db_data:
+  nextcloud_core:
+```
+
+> **Important:** Replace both `change_this_*` passwords with strong passwords of your own, and replace `192.168.X.X` with your server's actual local IP address.
+
+Save the file (`Ctrl+O`, Enter, `Ctrl+X`), then start everything:
+```bash
+docker compose up -d
+```
+
+Docker will pull all three images and start the containers - this takes 2–5 minutes the first time depending on your internet connection. The `-d` flag runs everything in the background so it keeps going even after you close the terminal.
+
+**Check everything is running:**
+```bash
+docker compose ps
+```
+All three containers - `nextcloud-db`, `nextcloud-redis`, and `nextcloud-app` - should show `Up`.
+
+**Open Nextcloud in your browser.** On any device on the same home network, go to:
+```
+http://192.168.X.X:8080
+```
+
+You'll see the Nextcloud setup screen. Create your admin account - choose a strong username and password, this is your main login. Under **Storage & database**, select **MySQL/MariaDB** and fill in:
+
+- Database user: `nextcloud`
+- Database password: whatever you set for `change_this_db_password`
+- Database name: `nextcloud`
+- Database host: `db`
+
+Click **Finish Setup**. It takes about a minute. You now have a fully working private cloud running on your own hardware.
+
+### Step 4: Configure Remote Access with Tailscale
