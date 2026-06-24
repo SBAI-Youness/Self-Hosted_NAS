@@ -145,7 +145,7 @@ nano docker-compose.yml
 ```
 
 Paste in this configuration:
- 
+
 ```yaml
 version: '3.8'
 services:
@@ -217,4 +217,79 @@ You'll see the Nextcloud setup screen. Create your admin account - choose a stro
 
 Click **Finish Setup**. It takes about a minute. You now have a fully working private cloud running on your own hardware.
 
+
 ### Step 4: Configure Remote Access with Tailscale
+
+Tailscale creates an encrypted tunnel between your devices and the server - no port forwarding, no exposed router, no static IP needed. Every device on your Tailscale account gets a permanent private IP that works from anywhere in the world.
+
+**Install Tailscale on your server:**
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+```
+
+It will print a URL - open it in your browser to authenticate. Sign up for a free account if you don't have one yet.
+
+**Enable MagicDNS and HTTPS certificates** in the [Tailscale admin console](https://login.tailscale.com/admin/dns). MagicDNS gives your server a stable hostname like `nas.your-tailnet.ts.net` instead of a raw IP. HTTPS certificates give you a valid padlock in the browser for free.
+
+**Get your server's Tailscale hostname:**
+Your hostname is visible in the [Tailscale admin console](https://login.tailscale.com/admin/machines) under your server's entry. You can also get it from the command line:
+```bash
+tailscale dns status
+```
+Look for this line in the output:
+```
+Other devices in your tailnet can reach this device at nas.your-tailnet.ts.net.
+```
+Use that hostname in all the steps below.
+
+**Tell Tailscale to serve Nextcloud over HTTPS:**
+```bash
+sudo tailscale serve --bg http://localhost:8080
+```
+This tells Tailscale to accept HTTPS traffic on port 443 and forward it to Nextcloud on port 8080 locally.
+
+**Tell Nextcloud to trust its new Tailscale domain:**
+```bash
+docker exec --user www-data nextcloud-app php occ config:system:set trusted_domains 1 --value="nas.your-tailnet.ts.net"
+docker exec --user www-data nextcloud-app php occ config:system:set overwriteprotocol --value="https"
+docker exec --user www-data nextcloud-app php occ config:system:set overwritehost --value="nas.your-tailnet.ts.net"
+```
+> Replace `nas.your-tailnet.ts.net` with your actual Tailscale hostname from the step above.
+
+**Install Tailscale on your other devices** and log in with the same account:
+
+- **iPhone / Android** — install the Tailscale app from the App Store or Play Store
+- **Windows** — download from [tailscale.com/download](https://tailscale.com/download)
+- **macOS** — download from the Mac App Store or [tailscale.com/download](https://tailscale.com/download)
+- **Linux** — run the same install script:
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+```
+
+Once logged in on any device, open your Nextcloud at:
+```
+https://nas.your-tailnet.ts.net
+```
+Real HTTPS padlock, fully encrypted, works from your home network or anywhere in the world.
+
+**Set up the mobile app for automatic photo backup:**
+
+1. Install the **Nextcloud** app (iOS or Android)
+2. Open it → tap **Log in**
+3. Server address: `https://nas.your-tailnet.ts.net`
+4. Enter your admin username and password
+5. Go to **Settings → Auto Upload** → enable it for your Camera folder
+Your photos will now back up automatically to your NAS whenever Tailscale is connected - stored on your own drive, never on someone else's server.
+
+
+### Step 5: Enable Public File Sharing with Funnel
+
+Enable Funnel to make shared links accessible to anyone, even without Tailscale:
+```bash
+sudo tailscale funnel --bg http://localhost:8080
+```
+
+Then in Nextcloud, right-click any file → **Share** → **Create public link**, optionally set a password and an expiration date, and send the link. The recipient opens it in any browser - no account, no app, no VPN required.
+
