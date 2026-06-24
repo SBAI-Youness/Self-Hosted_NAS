@@ -1,4 +1,4 @@
-# Self-Hosted NAS: A Free Google Drive Replacement
+# Self-Hosted NAS: A Private Cloud Storage on Your Own Hardware
 
 A private cloud storage system built at home, using spare hardware, that handles file storage, photo backup, and secure sharing - with full CRUD access from anywhere in the world, and zero monthly fees.
 
