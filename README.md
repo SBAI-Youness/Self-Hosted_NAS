@@ -259,10 +259,10 @@ docker exec --user www-data nextcloud-app php occ config:system:set overwritehos
 
 **Install Tailscale on your other devices** and log in with the same account:
 
-- **iPhone / Android** — install the Tailscale app from the App Store or Play Store
-- **Windows** — download from [tailscale.com/download](https://tailscale.com/download)
-- **macOS** — download from the Mac App Store or [tailscale.com/download](https://tailscale.com/download)
-- **Linux** — run the same install script:
+- **iPhone / Android** - install the Tailscale app from the App Store or Play Store
+- **Windows** - download from [tailscale.com/download](https://tailscale.com/download)
+- **macOS** - download from the Mac App Store or [tailscale.com/download](https://tailscale.com/download)
+- **Linux** - run the same install script:
 ```bash
 curl -fsSL https://tailscale.com/install.sh | sh
 sudo tailscale up
@@ -293,3 +293,43 @@ sudo tailscale funnel --bg http://localhost:8080
 
 Then in Nextcloud, right-click any file → **Share** → **Create public link**, optionally set a password and an expiration date, and send the link. The recipient opens it in any browser - no account, no app, no VPN required.
 
+---
+
+## The Reality of Security
+
+Here's the thing nobody likes to say out loud: **your data's security is never entirely in your own hands, even when you self-host.**
+
+Self-hosting removes one specific risk - a company scanning your files, training models on them, or losing them in a breach you have no control over. That's real, and it's worth something. But it trades that risk for a different set of responsibilities that are now entirely on you:
+
+- **You are now your own sysadmin.** If Nextcloud has a vulnerability and you don't patch it, that's on you - there's no security team behind you.
+- **Tailscale Funnel makes your login page public.** I mitigate that with 2FA, password-protected links, and link expiration, but "mitigate" isn't "eliminate." A misconfigured share or a weak password is now my mistake to make, not a faceless company's.
+- **Hardware fails.** A laptop hard drive can die with zero warning. Google Drive has redundancy across data centers; my old Dell Latitude has exactly one disk. If I don't back this up somewhere else too, "owning my data" can turn into "losing my data" in one bad afternoon.
+- **Your home internet becomes infrastructure.** Power outages, ISP downtime, a router reboot at the wrong time - all now my problem, not a 24/7 ops team's.
+
+So this isn't "self-hosting is more secure than the cloud." It's "self-hosting moves the responsibility for security from a company to me, and I'd rather hold that responsibility myself than hand it over - as long as I take it seriously." If you do this too, actually do the hardening steps. Don't just stand up Nextcloud and Funnel and call it done.
+
+### What I actually did about it
+
+- Enabled two-factor authentication on the admin account
+- Every public share link gets a password and an expiration date
+- Renamed the admin account away from anything guessable
+- Started a second backup - a periodic copy of `~/nextcloud-data` to a separate drive, because RAID and Docker volumes are not a backup plan
+
+---
+
+## What I ended up with
+
+- A private cloud for documents and photos, fully equivalent to Google Storage day-to-day
+- Real create/read/update/delete access from any device, anywhere
+- Automatic photo backup from my phone through the Nextcloud app
+- A way to send files to non-technical people that just works - they click a link
+- HTTPS everywhere, no open ports on my router, no monthly bill
+- My data stays on hardware I own, except for the specific moments I choose to share it
+
+---
+
+## Should you build this too?
+
+If you've ever hit a storage ceiling, paid for more cloud space than you wanted to, or just didn't love the idea of your personal files sitting on someone else's server - yes, probably. The hardware cost is whatever's already sitting in a drawer: an old laptop, a Raspberry Pi, anything with a disk and a network port. After that it's free, it's yours, and you can keep building on it - photos, contacts, calendars, dozens of other self-hosted apps in the same ecosystem.
+
+Just go in with eyes open about what you're signing up for. You're not eliminating risk, you're taking it on yourself. For me, that trade was worth it. It might be for you too.
