@@ -3,11 +3,11 @@
 A private cloud storage system built at home, using spare hardware, that handles file storage, photo backup, and secure sharing - with full CRUD access from anywhere in the world, and zero monthly fees.
 
 <div align="center">
-  <img src="images/nextcloud-browser.png" width="80%" alt="Nextcloud running in the browser"/>
+  <img src="screenshots/nextcloud-browser.png" width="80%" alt="Nextcloud running in the browser"/>
   <br/><br/>
-  <img src="images/nextcloud-app.jpg" width="30%" alt="Nextcloud on iOS"/>
+  <img src="screenshots/nextcloud-app.jpg" width="30%" alt="Nextcloud on iOS"/>
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="images/tailscale-app.png" width="30%" alt="Tailscale VPN connected"/>
+  <img src="screenshots/tailscale-app.png" width="30%" alt="Tailscale VPN connected"/>
 </div>
 
 ---
@@ -117,6 +117,10 @@ ssh username@192.168.X.X
 ```
 > Both machines need to be on the same local network for this step - the `192.168.X.X` address is only reachable from inside your home network. Once Tailscale is set up in Step 4, you can SSH from anywhere using the Tailscale IP instead.
 
+<div align="center">
+  <img src="screenshots/ssh-ubuntu.png" width="80%" alt="SSH into Ubuntu Server"/>
+</div>
+
 Every command from here runs over SSH.
 
 Before anything else, update the system to make sure you're starting with the latest security patches:
@@ -225,6 +229,10 @@ You'll see the Nextcloud setup screen. Create your admin account - choose a stro
 
 Click **Finish Setup**. It takes about a minute. You now have a fully working private cloud running on your own hardware.
 
+<div align="center">
+  <img src="screenshots/nextcloud-dashboard.png" width="80%" alt="Nextcloud files dashboard"/>
+</div>
+
 
 ### Step 4: Configure Remote Access with Tailscale
 
@@ -300,6 +308,10 @@ sudo tailscale funnel --bg http://localhost:8080
 ```
 
 Then in Nextcloud, right-click any file → **Share** → **Create public link**, optionally set a password and an expiration date, and send the link. The recipient opens it in any browser - no account, no app, no VPN required.
+
+<div align="center">
+  <img src="screenshots/nextcloud-share.png" width="85%" alt="Nextcloud share link dialog"/>
+</div>
 
 ---
 
