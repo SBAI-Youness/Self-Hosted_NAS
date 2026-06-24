@@ -4,7 +4,7 @@ A private cloud storage system built at home, using spare hardware, that handles
 
 <div align="center">
   <img src="images/nextcloud-browser.png" width="80%" alt="Nextcloud running in the browser"/>
-  <br/><br/><br/>
+  <br/><br/>
   <img src="images/nextcloud-app.jpg" width="30%" alt="Nextcloud on iOS"/>
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
   <img src="images/tailscale-app.png" width="30%" alt="Tailscale VPN connected"/>
